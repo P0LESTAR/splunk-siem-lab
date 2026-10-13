@@ -57,7 +57,8 @@
 - [x] splunk / lnx-victim VM 기본 세팅
 - [x] Splunk 10.6 설치, 수신 9997, 인덱스 `wineventlog`/`sysmon`/`linux`, TA(windows/sysmon/nix) + CIM 설치 (라이선스: Enterprise Trial)
 - [x] 로그 수집: win-victim(호스트명 `win-vic`, UF + Sysmon → `wineventlog`/`sysmon`, sourcetype `XmlWinEventLog`), lnx-victim(UF → `linux`: audit.log, auth.log, syslog)
-- [ ] 저장소 git 초기화 + Developer License 신청
+- [x] GitHub 저장소: https://github.com/P0LESTAR/splunk-siem-lab (private, `main`). `gh`는 `%LOCALAPPDATA%\ghcli\bin`(PATH 미등록)
+- 라이선스: Enterprise Trial(2026-10-08 시작, 약 12/7 만료) → 이후 Free 전환 예정. Free는 알림/예약 검색 없음 → 알림 동작 캡처는 만료 전에 완료
 - [ ] 공격 시뮬레이션 및 탐지 룰 작성 (저장된 검색 아직 없음)
 - [ ] 포트폴리오 문서화
 
