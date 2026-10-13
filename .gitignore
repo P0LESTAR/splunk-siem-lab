@@ -1,0 +1,17 @@
+# 비밀 정보
+.env
+*.lic
+*.pem
+*.key
+outputs.conf.bak
+passwd
+user-seed.conf
+
+# 대용량, 임시 파일
+*.vmdk
+*.vmx
+*.iso
+*.zip
+*.log
+Thumbs.db
+desktop.ini
