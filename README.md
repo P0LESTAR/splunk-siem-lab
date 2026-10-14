@@ -7,9 +7,11 @@ Splunk Enterprise 기반 SIEM 홈랩. 가상 환경에서 공격을 재현하고
 | VM | OS | IP (Host-only) | 역할 |
 |---|---|---|---|
 | splunk | Ubuntu Server | 10.10.10.10 | Splunk Enterprise 10.6 (인덱서 + 서치헤드) |
-| win-victim | Windows | 10.10.10.20 | Universal Forwarder + Sysmon |
-| lnx-victim | Ubuntu | 10.10.10.21 | Universal Forwarder + auditd |
+| win-vic | Windows | 10.10.10.20 | Universal Forwarder + Sysmon |
+| linux-victim | Ubuntu | 10.10.10.21 | Universal Forwarder + auditd |
 | kali | Kali Linux | 10.10.10.100 | 공격자 |
+
+VM 이름은 OS 호스트명이자 Splunk `host` 필드 값과 같다.
 
 - 랩 내부망: VMware Host-only `10.10.10.0/24` (DHCP 없음)
 - 인터넷: 필요한 VM에만 NAT NIC 추가
