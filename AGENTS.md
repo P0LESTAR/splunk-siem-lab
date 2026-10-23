@@ -81,7 +81,7 @@
 - [x] 가시성 점검(2026-10-14, 24h): 5개 소스 모두 수신, 일 사용량 약 112MB/500MB. linux:audit 99.7MB — apt/dpkg 작업 중 `usr_writes` 키 폭증 + UF `splunkd`가 audit.log를 읽을 때 `auditlog` 키가 다시 기록하는 루프(Linux 단계에서 정리). PowerShell/Operational은 10/13 14:20 이후 이벤트 없음(수집 재확인 필요)
 - 순서: **Windows(win-vic) 시나리오 먼저**, Linux는 나중에. 그동안 linux-victim VM은 꺼둠 → `linux` 인덱스 무수신은 정상.
 - [x] win-vic: WFP 감사 활성화(2026-10-14) — 필터링 플랫폼 연결 `{0CCE9226}` 성공+실패(5156/5157), 패킷 삭제 `{0CCE9225}` 실패(5152). 방화벽 3개 프로필 ON. 허용 규칙(445/135/3389/5985 ← 10.10.10.0/24)·Splunk 수신 확인은 미검증
-- Windows 실습 계획: S0 준비 → S1 포트 스캔 → S2 SMB 브루트포스 → [x] S3 LSASS 접근 T1003.001 → S4 PowerShell -enc/Run 키 → S5 Defender 무력화 → 대시보드·튜닝·보고서. Alert 캡처는 Trial 만료(약 12/7) 전에.
+- Windows 실습 계획: S0 준비 → S1 포트 스캔 → S2 SMB 브루트포스 → [x] S3 LSASS 접근 T1003.001 → [x] S4 PowerShell -enc/Run 키 → S5 Defender 무력화 → 대시보드·튜닝·보고서. Alert 캡처는 Trial 만료(약 12/7) 전에.
 - win10-vic 구축(2026-10-20):
   - [x] Windows 10 영문판 설치, 로컬 계정
   - [x] VMnet2 고정 IP 10.10.10.22, splunk(10.10.10.10) ping·9997 연결 확인
@@ -94,8 +94,15 @@
   - [x] Sysmon EID 10(ProcessAccess) 활성화: SwiftOnSecurity 기본값은 include 규칙이 비어 있어 아무것도 기록하지 않음 → `TargetImage end with \lsass.exe` 추가 후 `Sysmon64.exe -c`로 적용(원본은 `sysmonconfig.xml.bak`). Splunk 수신 확인. 정상 기준선 정리와 이벤트량 튜닝은 아직
   - [x] NAT 연결 해제, 스냅샷(`baseline-logging-ok`)
 - [x] S3 실습 완료: Mimikatz 덤프 탐지 및 Alert 구축
-  - [ ] win-vic와 병행 운영할지, 대체할지 결정
-- [ ] 공격 시뮬레이션 및 탐지 룰 작성 (저장된 검색 아직 없음)
+- [x] S4 실습 완료: PowerShell -enc/Run 키 공격 탐지 및 쿼리 도출 (2026-10-22)
+- [ ] **알림 트리아지 자동화(Python)** — 자소서에 기재한 범위, 면접 전 완성 필수
+  - 목표: 탐지 알림이 발생하면 Python 스크립트가 관련 로그를 묶어 1차 분석 요약을 생성한다.
+  - 트리거: Splunk Alert → 스크립트 실행. 방법은 둘 중 하나로 결정 — (a) 알림 액션 `Run a script`(`$SPLUNK_HOME/bin/scripts/`, 인자/환경변수로 알림 정보 전달) 또는 (b) 웹훅 → 호스트/splunk VM의 소형 HTTP 수신기. Trial 만료(약 12/7) 후 Free는 알림이 없으므로 (c) 저장된 검색 결과를 REST(`/services/search/jobs`)로 주기 폴링하는 대체 경로도 준비.
+  - 수집 범위: 알림의 `host`, 사용자, 프로세스 GUID/PID, 시각을 기준으로 전후 ±N분(기본 10분)의 `sysmon`(EID 1/3/10/11/13), `wineventlog`(4688/4624/4625/5156), `linux`(auditd, auth) 이벤트를 REST 검색으로 묶는다.
+  - 출력: 마크다운 요약 1건 — 알림명, ATT&CK ID/전술, 영향 호스트/계정, 프로세스 트리(부모→자식 체인), 관련 네트워크 연결, 타임라인, 관리용 SSH(10.10.10.1) 등 기준선 제외 여부, 권장 다음 조치. `reports/triage/<timestamp>_<alert>.md`로 저장하고 Splunk `triage` 인덱스(또는 KV store)에도 적재해 대시보드에서 조회.
+  - LLM 요약은 선택 단계: 묶은 로그를 입력으로 1차 판단 문장만 생성, 원본 로그 링크는 반드시 첨부(인턴 때의 근거 첨부 원칙과 동일).
+  - 검증: S3(LSASS 접근) Alert로 end-to-end 1회, S4/S5 추가 후 재검증. 오탐(정상 관리 작업) 1건이 요약에서 기준선으로 분류되는지 확인.
+  - 자격증명: Splunk 토큰은 환경변수/`.env`로만, 저장소에 기록 금지.
 - [ ] 포트폴리오 문서화
 
 스냅샷: splunk `splunk 설치`, linux-victim `splunk uf 초기셋팅`, kali `Snapshot 1`. win-vic VM은 암호화되어 있어 vmrun으로 조회 불가(콘솔에서 확인).
