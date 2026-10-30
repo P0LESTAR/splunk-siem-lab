@@ -81,7 +81,7 @@
 - [x] 가시성 점검(2026-10-14, 24h): 5개 소스 모두 수신, 일 사용량 약 112MB/500MB. linux:audit 99.7MB — apt/dpkg 작업 중 `usr_writes` 키 폭증 + UF `splunkd`가 audit.log를 읽을 때 `auditlog` 키가 다시 기록하는 루프(Linux 단계에서 정리). PowerShell/Operational은 10/13 14:20 이후 이벤트 없음(수집 재확인 필요)
 - 순서: **Windows(win-vic) 시나리오 먼저**, Linux는 나중에. 그동안 linux-victim VM은 꺼둠 → `linux` 인덱스 무수신은 정상.
 - [x] win-vic: WFP 감사 활성화(2026-10-14) — 필터링 플랫폼 연결 `{0CCE9226}` 성공+실패(5156/5157), 패킷 삭제 `{0CCE9225}` 실패(5152). 방화벽 3개 프로필 ON. 허용 규칙(445/135/3389/5985 ← 10.10.10.0/24)·Splunk 수신 확인은 미검증
-- Windows 실습 계획: S0 준비 → S1 포트 스캔 → S2 SMB 브루트포스 → [x] S3 LSASS 접근 T1003.001 → [x] S4 PowerShell -enc/Run 키 → S5 Defender 무력화 → 대시보드·튜닝·보고서. Alert 캡처는 Trial 만료(약 12/7) 전에.
+- Windows 실습 계획: S0 준비 → S1 포트 스캔 → S2 SMB 브루트포스 → [x] S3 LSASS 접근 T1003.001 → [x] S4 PowerShell -enc/Run 키 → [x] S5 Defender 무력화·감사 로그 삭제 → 대시보드·튜닝·보고서. Alert 캡처는 Trial 만료(약 12/7) 전에.
 - win10-vic 구축(2026-10-20):
   - [x] Windows 10 영문판 설치, 로컬 계정
   - [x] VMnet2 고정 IP 10.10.10.22, splunk(10.10.10.10) ping·9997 연결 확인
@@ -95,6 +95,7 @@
   - [x] NAT 연결 해제, 스냅샷(`baseline-logging-ok`)
 - [x] S3 실습 완료: Mimikatz 덤프 탐지 및 Alert 구축
 - [x] S4 실습 완료: PowerShell -enc/Run 키 공격 탐지 및 쿼리 도출 (2026-10-22)
+- [x] S5 실습 완료: Defender 무력화(T1562.001) 차단·성공 비교 및 Security 감사 로그 삭제(T1070.001) 탐지, `실습보고서5.md` 작성 (2026-10-30)
 - [ ] **알림 트리아지 자동화(Python)** — 자소서에 기재한 범위, 면접 전 완성 필수
   - 목표: 탐지 알림이 발생하면 Python 스크립트가 관련 로그를 묶어 1차 분석 요약을 생성한다.
   - 트리거: Splunk Alert → 스크립트 실행. 방법은 둘 중 하나로 결정 — (a) 알림 액션 `Run a script`(`$SPLUNK_HOME/bin/scripts/`, 인자/환경변수로 알림 정보 전달) 또는 (b) 웹훅 → 호스트/splunk VM의 소형 HTTP 수신기. Trial 만료(약 12/7) 후 Free는 알림이 없으므로 (c) 저장된 검색 결과를 REST(`/services/search/jobs`)로 주기 폴링하는 대체 경로도 준비.
