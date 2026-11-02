@@ -96,14 +96,25 @@
 - [x] S3 실습 완료: Mimikatz 덤프 탐지 및 Alert 구축
 - [x] S4 실습 완료: PowerShell -enc/Run 키 공격 탐지 및 쿼리 도출 (2026-10-22)
 - [x] S5 실습 완료: Defender 무력화(T1562.001) 차단·성공 비교 및 Security 감사 로그 삭제(T1070.001) 탐지, `실습보고서5.md` 작성 (2026-10-30)
-- [ ] **알림 트리아지 자동화(Python)** — 자소서에 기재한 범위, 면접 전 완성 필수
-  - 목표: 탐지 알림이 발생하면 Python 스크립트가 관련 로그를 묶어 1차 분석 요약을 생성한다.
-  - 트리거: Splunk Alert → 스크립트 실행. 방법은 둘 중 하나로 결정 — (a) 알림 액션 `Run a script`(`$SPLUNK_HOME/bin/scripts/`, 인자/환경변수로 알림 정보 전달) 또는 (b) 웹훅 → 호스트/splunk VM의 소형 HTTP 수신기. Trial 만료(약 12/7) 후 Free는 알림이 없으므로 (c) 저장된 검색 결과를 REST(`/services/search/jobs`)로 주기 폴링하는 대체 경로도 준비.
-  - 수집 범위: 알림의 `host`, 사용자, 프로세스 GUID/PID, 시각을 기준으로 전후 ±N분(기본 10분)의 `sysmon`(EID 1/3/10/11/13), `wineventlog`(4688/4624/4625/5156), `linux`(auditd, auth) 이벤트를 REST 검색으로 묶는다.
-  - 출력: 마크다운 요약 1건 — 알림명, ATT&CK ID/전술, 영향 호스트/계정, 프로세스 트리(부모→자식 체인), 관련 네트워크 연결, 타임라인, 관리용 SSH(10.10.10.1) 등 기준선 제외 여부, 권장 다음 조치. `reports/triage/<timestamp>_<alert>.md`로 저장하고 Splunk `triage` 인덱스(또는 KV store)에도 적재해 대시보드에서 조회.
-  - LLM 요약은 선택 단계: 묶은 로그를 입력으로 1차 판단 문장만 생성, 원본 로그 링크는 반드시 첨부(인턴 때의 근거 첨부 원칙과 동일).
-  - 검증: S3(LSASS 접근) Alert로 end-to-end 1회, S4/S5 추가 후 재검증. 오탐(정상 관리 작업) 1건이 요약에서 기준선으로 분류되는지 확인.
-  - 자격증명: Splunk 토큰은 환경변수/`.env`로만, 저장소에 기록 금지.
+- [x] **알림 트리아지 자동화(Python) — S3 MVP**
+  - 사용자 선택에 따라 S3 하나를 먼저 완성. 사용자 제공 새 실행 보고서와 분석기 `created` 관측으로 Alert → Webhook 수신 → REST 관련 로그 조회 → Markdown 요약 자동 생성의 라이브 E2E를 확인했다. 에이전트가 VM에 직접 접속해 확인한 것은 아니다.
+  - 코드: `automation/triage_receiver.py`, `automation/triage_analyzer.py`, 실행 문서: `automation/README.md`. Python 표준 라이브러리만 사용.
+  - 실제 Alert 조건은 Sysmon EID 1 + `OriginalFileName="mimikatz.exe"`이며, LSASS 접근 결과는 보강 검색의 EID 10으로 확인한다. Alert 제목만 보고 EID 10 탐지라고 설명하지 않는다.
+  - 경고는 1분 주기 예약 검색. 사용자가 `host,ProcessGuid` 기준 10분 억제를 적용했다고 확인했고, 제공 scheduler 로그에서도 억제 동작을 확인했다.
+  - Webhook: Splunk VM의 `http://127.0.0.1:18080/webhook/splunk`, Enterprise `alert_actions.conf`에 정확한 주소 허용. deprecated `Run a script`는 사용하지 않음.
+  - 수신 JSON: `~/splunk-triage/inbox/`. 분석기는 별도 터미널에서 `--watch`로 실행하고 원본 이벤트 이전 10분~이후 2분의 Sysmon EID 1/10/3을 검색한다. watch는 후속 이벤트·수집 여유를 위해 이벤트 이후 3분이 지난 파일부터 처리한다.
+  - 출력: `~/splunk-triage/reports/<host와 GUID 기반 식별자>/report.md`, `evidence.json`. 호스트·계정·프로세스·직접 부모·타임라인·조사 권고·조회 링크·분석 한계를 포함. `host + ProcessGuid` 기준 Python 중복 처리 방지.
+  - 실제 새 실행 증거: `win10-vic`, GUID `{e29e4255-3441-6ae7-450b-000000000600}`. 사용자 제공 타임라인(KST): 21:44:37.106 CMD 생성 → 21:44:49.719 mimi 생성 → 21:44:58.934 LSASS 접근(`0x1010`). 보강 검색 SID `1793537283.418`.
+  - 호스트 계약 테스트 15개 통과. 합성 HTTP 테스트와 사용자 제공 라이브 실행 증거를 구분한다. 미완료·강제 종료 검색은 완료 보고서로 저장하지 않는다.
+  - 토큰: 실행 시 숨김 프롬프트 또는 `SPLUNK_TOKEN` 환경변수. 저장소·채팅에 기록 금지. `--insecure-local`은 랩 loopback 인증서 검사 생략이며 운영 환경에서는 CA 검증을 사용한다.
+  - [ ] 선택 확장: 정상 승인 작업 분류, 전체 조상 트리·인증 로그 연계, S4/S5 지원, Splunk 인덱스/KV 적재·대시보드, 서비스 등록, 제한된 재시도·백오프, Trial 종료 후 대체 실행 경로. 현재 MVP 완료와 구분한다.
+
+### 다음 세션 시작점 — S3 자동화 증거 정리
+1. `git status`로 사용자 변경을 확인하고 기존 변경을 덮어쓰거나 임의 커밋하지 않는다.
+2. 사용자가 원하면 `실습보고서3.md`에 자동화 흐름·검증 결과·한계를 추가하고, 실제 Alert/수신/분석기 출력/보고서를 근거로 정리한다. API 토큰과 민감한 원본 로그는 제외한다.
+3. VM의 `report.md`와 `evidence.json`은 아직 에이전트가 호스트로 복사하지 않았다. 사용자 제공 출력만 확인된 상태이며, 별도 허가 없이 VM에 접속하지 않는다.
+4. 다음 확장은 사용자가 정한다. S3 MVP는 동작 검증됐지만 상시 서비스·S4/S5·정상 작업 자동 분류가 완료됐다고 설명하지 않는다.
+
 - [ ] 포트폴리오 문서화
 
 스냅샷: splunk `splunk 설치`, linux-victim `splunk uf 초기셋팅`, kali `Snapshot 1`. win-vic VM은 암호화되어 있어 vmrun으로 조회 불가(콘솔에서 확인).
