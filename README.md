@@ -48,6 +48,6 @@ screenshots/  검색 결과와 대시보드 캡처
 
 - [x] 가상 네트워크와 VM 구성
 - [x] Splunk 설치와 로그 수집 (Windows, Sysmon, Linux)
-- [ ] 탐지 시나리오와 룰 작성 (S3 완료)
+- [ ] 탐지 시나리오와 룰 작성 (S1~S5 완료 — win-vic: S1/S2, win10-vic: S3~S5)
 - [ ] 대시보드
 - [ ] 문서화

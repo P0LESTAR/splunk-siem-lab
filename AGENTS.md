@@ -33,7 +33,7 @@
 - Ubuntu VM: `ens33` = NAT(DHCP), `eth0` = VMnet2 고정 IP, 게이트웨이 없음.
 - win10-vic: 어댑터 이름을 직접 바꿔 둠. `LAB` = VMnet2 고정 10.10.10.22/24(게이트웨이·DNS 없음, 프로필 Private), `NAT` = DHCP. VMware 어댑터 순서와 Windows `EthernetN` 번호는 일치하지 않으니 이름이 아니라 IP(169.254.x = VMnet2, 192.168.25.x = NAT)나 MAC으로 구분한다.
 - win10-vic는 영문판이다 → 메뉴 이름은 영어로 안내. 감사 정책은 언어와 무관한 GUID 방식으로 설정한다.
-- win10-vic와 win-vic(Win11)을 병행 운영할지, win10-vic로 대체할지는 아직 결정하지 않았다.
+- **결정**: S3부터 피해자 VM을 win10-vic(Win10, 10.10.10.22)로 전환. win-vic(Win11, 10.10.10.20)는 S1/S2 및 WFP 감사 실습 보존용으로 유지(병행).
 - VMware 쪽 VM 폴더/vmx 이름은 예전 그대로다: win-vic = `win-victim\win-victim.vmx`, linux-victim = `Ubuntu 64-bit\Ubuntu 64-bit.vmx` (`C:\Users\itsme\Documents\Virtual Machines\` 아래).
 
 ## SSH
@@ -81,7 +81,7 @@
 - [x] 가시성 점검(2026-10-14, 24h): 5개 소스 모두 수신, 일 사용량 약 112MB/500MB. linux:audit 99.7MB — apt/dpkg 작업 중 `usr_writes` 키 폭증 + UF `splunkd`가 audit.log를 읽을 때 `auditlog` 키가 다시 기록하는 루프(Linux 단계에서 정리). PowerShell/Operational은 10/13 14:20 이후 이벤트 없음(수집 재확인 필요)
 - 순서: **Windows(win-vic) 시나리오 먼저**, Linux는 나중에. 그동안 linux-victim VM은 꺼둠 → `linux` 인덱스 무수신은 정상.
 - [x] win-vic: WFP 감사 활성화(2026-10-14) — 필터링 플랫폼 연결 `{0CCE9226}` 성공+실패(5156/5157), 패킷 삭제 `{0CCE9225}` 실패(5152). 방화벽 3개 프로필 ON. 허용 규칙(445/135/3389/5985 ← 10.10.10.0/24)·Splunk 수신 확인은 미검증
-- Windows 실습 계획: S0 준비 → S1 포트 스캔 → S2 SMB 브루트포스 → [x] S3 LSASS 접근 T1003.001 → [x] S4 PowerShell -enc/Run 키 → [x] S5 Defender 무력화·감사 로그 삭제 → 대시보드·튜닝·보고서. Alert 캡처는 Trial 만료(약 12/7) 전에.
+- Windows 실습 계획: S0 준비 → S1 포트 스캔 → S2 SMB 브루트포스 → [x] S3 LSASS 접근 T1003.001 → [x] S4 PowerShell -enc/Run 키 → [x] S5 Defender 무력화·감사 로그 삭제 → 대시보드·튜닝·보고서. Alert 캡처는 Trial 만료(약 12/7) 전에. (S1/S2: win-vic, S3~: win10-vic)
 - win10-vic 구축(2026-10-20):
   - [x] Windows 10 영문판 설치, 로컬 계정
   - [x] VMnet2 고정 IP 10.10.10.22, splunk(10.10.10.10) ping·9997 연결 확인
